@@ -1,0 +1,29 @@
+-
+  Create a cronjob for the merge and purge action.
+-
+  !record {model: ir.cron, id: cron_merge_and_purge_partners}:
+    name: 'Merge and Purge Partners'
+    active: false
+    priority: 10
+    interval_number: 1
+    interval_type: 'days'
+    doall: false
+    numbercall: -1
+    model: 'res.partner'
+    function: 'cron_merge_and_purge'
+
+-
+  Activate the cronjob and set its next execution date to midnight tomorrow.
+-
+  !python {model: ir.cron}: |
+    import time, pytz
+    from datetime import datetime, timedelta
+    from openerp.osv import osv, fields
+    midnight_tomorrow = time.strftime("%Y-%m-%d %H:%M:%S",
+      (fields.datetime.context_timestamp(cr, uid, datetime.now()) + timedelta(days=1))
+      .replace(hour=0, minute=0, second=0).astimezone(pytz.UTC).timetuple())
+
+    self.write(cr, uid, [ref('cron_merge_and_purge_partners')], {
+      'active': True,
+      'nextcall': midnight_tomorrow
+    })

@@ -1,0 +1,110 @@
+-
+  Partners with identical information should have identical merge-purge keys.
+-
+  !python {model: res.partner}: |
+    p1 = self.browse(cr, uid, ref('partner_1'))
+    p2 = self.browse(cr, uid, ref('partner_1_2'))
+    assert p1.mergepurge_key == p2.mergepurge_key
+
+-
+  Partners with different information should have different merge-purge keys.
+-
+  !python {model: res.partner}: |
+    p1 = self.browse(cr, uid, ref('partner_1'))
+    p2 = self.browse(cr, uid, ref('partner_2'))
+    assert p1.mergepurge_key != p2.mergepurge_key
+
+-
+  Merge-purge key calculation should be able to handle unicode characters.
+-
+  !python {model: res.partner}: |
+    p = self.browse(cr, uid, ref('partner_unicode'))
+    assert p.mergepurge_key, "Blew up trying to create a merge-purge key containing unicode."
+
+-
+  Groups should be created for matching users.
+-
+  !python {model: mergepurge.group}: |
+    p1 = self.pool.get('res.partner').browse(cr, uid, ref('partner_1'))
+    groups = self.browse(cr, uid, self.search(cr, uid, [('mergepurge_key', '=', p1.mergepurge_key)]))
+    assert len(groups) == 1, "Did not create 1 group."
+    assert len(groups[0].assoc_ids) == 2, "Did not create a group with 2 users."
+
+    actual_partners = sorted([assoc.partner_id.id for assoc in groups[0].assoc_ids])
+    expected_partners = sorted([ref('partner_1_2'), p1.id])
+    assert actual_partners == expected_partners, "Group membership was incorrect."
+
+-
+  Non-matching users can be forced into groups together.
+-
+  !python {model: mergepurge.group}: |
+    p30 = ref('partner_3_0')
+    assoc_pool = self.pool.get('mergepurge.assoc')
+    assoc = assoc_pool.browse(cr, uid, assoc_pool.search(cr, uid, [('partner_id', '=', p30)]))[0]
+    partner_ids = [a.partner_id.id for a in assoc.mergepurge_id.assoc_ids]
+
+    assert p30 in partner_ids, "Partner 3.0 not in forced group!"
+    assert ref('partner_3_1') in partner_ids, "Partner 3.1 not in forced group!"
+    assert ref('partner_3_2') in partner_ids, "Partner 3.2 not in forced group!"
+
+-
+  Members can be removed from groups.
+-
+  !python {model: mergepurge.group}: |
+    p1_2 = self.pool.get('res.partner').browse(cr, uid, ref('partner_1_2'))
+    groups = self.browse(cr, uid, self.search(cr, uid, [('mergepurge_key', '=', p1_2.mergepurge_key)]))
+    assert len(groups) == 1, "Could not find group."
+
+    group = groups[0]
+    assert group.member_count == 2, "Group did not start with 2 users."
+
+    for assoc in group.assoc_ids:
+      if assoc.partner_id.id == p1_2.id:
+        self.pool.get('mergepurge.assoc').unlink(cr, uid, [assoc.id])
+
+    group = self.browse(cr, uid, group.id) # Refresh group object.
+    assert len(group.assoc_ids) == 1, "Group did not end up with 1 user."
+
+-
+  Members can be added to groups.
+-
+  !python {model: mergepurge.group}: |
+    p1 = self.pool.get('res.partner').browse(cr, uid, ref('partner_1'))
+    p2 = self.pool.get('res.partner').browse(cr, uid, ref('partner_2'))
+    groups = self.browse(cr, uid, self.search(cr, uid, [('mergepurge_key', '=', p1.mergepurge_key)]))
+    assert len(groups) == 1, "Could not find group."
+
+    group = groups[0]
+    assert group.member_count == 1, "Group did not start with 1 user."
+
+    self.pool.get('mergepurge.assoc').create(cr, uid, {'partner_id': p2.id, 'mergepurge_id': group.id})
+
+    group = self.browse(cr, uid, group.id) # Refresh group object.
+    assert len(group.assoc_ids) == 2, "Group did not end up with 2 users."
+
+-
+  Resources belonging to members get reassigned to the oldest member.
+-
+  !python {model: mergepurge.group}: |
+    partner_pool = self.pool.get('res.partner')
+    p1 = partner_pool.browse(cr, uid, ref('partner_1'))
+    p2 = partner_pool.browse(cr, uid, ref('partner_2'))
+    group = self.browse(cr, uid, self.search(cr, uid, [('mergepurge_key', '=', p1.mergepurge_key)]))[0]
+
+    user = self.pool.get('res.users').browse(cr, uid, ref('test_user'))
+    assert user.partner_id.id == p2.id, "User does not belong to the expected partner!"
+
+    self.execute(cr, uid, [group.id])
+
+    user = self.pool.get('res.users').browse(cr, uid, ref('test_user'))
+    assert user.partner_id.id == p1.id, "User was not transferred as expected."
+
+-
+  Group, associations, and other partners in group should be deleted.
+-
+  !python {model: mergepurge.group}: |
+    partner_pool = self.pool.get('res.partner')
+    p1 = partner_pool.browse(cr, uid, ref('partner_1'))
+    assert not self.pool.get("mergepurge.assoc").search(cr, uid, [('partner_id', '=', ref('partner_2'))])
+    assert not partner_pool.search(cr, uid, [('id', '=', ref('partner_2'))]), "Partner 2 was not deleted."
+    assert not self.search(cr, uid, [('mergepurge_key', '=', p1.mergepurge_key)]), "Group was not deleted."

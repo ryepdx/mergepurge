@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data noupdate="1">
+        <!-- Create two partners that will naturally merge and one that won't -->
+        <record id="partner_1" model="res.partner">
+            <field name="name">Partner 1</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="customer" eval="True"/>
+            <field name="street">82-85 Academy Avenue</field>
+            <field name="city">Birmingham</field>
+            <field name="zip">B46 3AG</field>
+            <field name="email">birmingham@yourcompany.com</field>
+        </record>
+
+        <record id="partner_1_2" model="res.partner">
+            <field name="name">Partner 1</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="customer" eval="True"/>
+            <field name="street">82-85 Academy Avenue</field>
+            <field name="city">Birmingham</field>
+            <field name="zip">B46 3AG</field>
+            <field name="email">birmingham@yourcompany.com</field>
+        </record>
+
+        <record id="partner_2" model="res.partner">
+            <field name="name">Partner 2</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="customer" eval="True"/>
+            <field name="street">86 Academy Avenue</field>
+            <field name="city">Birmingham</field>
+            <field name="zip">B46 3AG</field>
+            <field name="email">birmingham@yourcompany.com</field>
+        </record>
+
+        <!-- Generate natural, merge-key-based groups -->
+        <function model="mergepurge.group" name="generate_all"
+                  eval="[[ref('partner_1'), ref('partner_1_2'), ref('partner_2')]]" />
+
+        <!-- Create a resource that will get reassigned to another partner upon mergepurge.group execution -->
+        <record id="test_user" model="res.users">
+            <field name="partner_id" ref="partner_2"/>
+            <field name="login">mergepurge_test_user</field>
+            <field name="password">mergepurge</field>
+        </record>
+
+        <!-- Create a unicode partner to make sure we can handle unicode characters fine -->
+        <record id="partner_unicode" model="res.partner">
+            <field name="name">Vermögensverwaltung</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="customer" eval="True"/>
+            <field name="street">86 Deutsche Avenue</field>
+            <field name="city">Berlin</field>
+            <field name="zip">B46 3AG</field>
+            <field name="email">berlin@yourcompany.com</field>
+        </record>
+
+        <!-- Create mismatched partners we can test forced grouping with -->
+        <record id="partner_3_0" model="res.partner">
+            <field name="name">Partner 3.0</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="customer" eval="True"/>
+            <field name="street">86 Academy Avenue</field>
+            <field name="city">Axton</field>
+            <field name="zip">B47 3AG</field>
+            <field name="email">p30@yourcompany.com</field>
+        </record>
+
+        <record id="partner_3_1" model="res.partner">
+            <field name="name">Partner 3.1</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="customer" eval="True"/>
+            <field name="street">87 Academy Avenue</field>
+            <field name="city">Baxton</field>
+            <field name="zip">B48 3AG</field>
+            <field name="email">p31@yourcompany.com</field>
+        </record>
+
+        <record id="partner_3_2" model="res.partner">
+            <field name="name">Partner 3.2</field>
+            <field name="company_id" ref="base.main_company"/>
+            <field name="customer" eval="True"/>
+            <field name="street">88 Academy Avenue</field>
+            <field name="city">Caxton</field>
+            <field name="zip">B49 3AG</field>
+            <field name="email">p32@yourcompany.com</field>
+        </record>
+
+        <!-- Create a forced grouping composed of our mismatched partners -->
+        <function model="mergepurge.group" name="generate_all"
+                  eval="[[ref('partner_3_0'), ref('partner_3_1'), ref('partner_3_2')], True]"/>
+    </data>
+</openerp>

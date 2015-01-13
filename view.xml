@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+	<data>
+        <record id="tree_group" model="ir.ui.view">
+            <field name="name">group.tree</field>
+            <field name="type">tree</field>
+            <field name="model">mergepurge.group</field>
+            <field name="arch" type="xml">
+                <tree string="Merge Groups">
+                    <field name="mergepurge_key"/>
+                    <field name="name"/>
+                    <field name="member_count"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="form_group" model="ir.ui.view">
+            <field name="name">group.form</field>
+            <field name="type">form</field>
+            <field name="model">mergepurge.group</field>
+            <field name="arch" type="xml">
+                <form string="Merge Group" version="7.0">
+                    <group cols="2">
+                        <group string="Partners To Merge">
+                            <field name="assoc_ids" nolabel="1"/>
+                        </group>
+                        <group string="Projected Merge Results">
+                            <field name="name"/>
+                            <field name="ref"/>
+                            <field name="date"/>
+                            <field name="street"/>
+                            <field name="street2"/>
+                            <field name="zip"/>
+                            <field name="city"/>
+                            <field name="state_id"/>
+                            <field name="country_id"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                            <field name="fax"/>
+                            <field name="mobile"/>
+                        </group>
+                        <button name="execute" type="object" string="Execute Merge and Purge"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_mergepurge_group" model="ir.actions.act_window">
+            <field name="name">Customer Merge Groups</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mergepurge.group</field>
+			<field name="view_type">form</field>
+			<field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem action="action_mergepurge_group" id="menu_mergepurge_group" parent="base.menu_sales" sequence="5"/>
+
+        <record id="tree_assoc" model="ir.ui.view">
+            <field name="name">assoc.tree</field>
+            <field name="type">tree</field>
+            <field name="model">mergepurge.assoc</field>
+            <field name="arch" type="xml">
+                <tree string="Scheduled Merges">
+                    <field name="mergepurge_key"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_partner_form" model="ir.ui.view">
+			<field name="name">view_partner_form</field>
+			<field name="model">res.partner</field>
+			<field name="type">form</field>
+			<field name="inherit_id" ref="base.view_partner_form" />
+			<field name="arch" type="xml">
+				<xpath expr="//notebook" position="before">
+					<group>
+                        <field name="mergepurge_key" attrs="{'invisible':[('assoc_ids','=',[])]}" />
+                        <field name="assoc_ids" attrs="{'invisible':[('assoc_ids','=',[])]}" />
+                    </group>
+				</xpath>
+			</field>
+		</record>
+
+        <record id="action_partner_force_merge" model="ir.actions.server">
+            <field name="name">Create Merge Group</field>
+            <field name="model_id" ref="model_mergepurge_group"/>
+            <field name="state">code</field>
+            <field name="code">action = self.generate_res_partner_action(
+                cr, uid, ids=context.get('active_ids', []), force_grouping=True, context=context)</field>
+        </record>
+
+        <record id="menu_partner_force_merge" model="ir.values">
+            <field eval="'client_action_multi'" name="key2"/>
+            <field eval="'res.partner'" name="model"/>
+            <field name="name">Create Merge Group Menu Item</field>
+            <field eval="'ir.actions.server,%d'%action_partner_force_merge" name="value"/>
+        </record>
+
+        <record id="action_execute_merge_group" model="ir.actions.server">
+            <field name="name">Execute Merge and Purge</field>
+            <field name="model_id" ref="model_mergepurge_group"/>
+            <field name="state">code</field>
+            <field name="code">action = self.execute_mergepurge_group_action(
+                cr, uid, context.get('active_ids', []), context=context)</field>
+        </record>
+
+        <record id="menu_execute_merge_group" model="ir.values">
+            <field eval="'client_action_multi'" name="key2"/>
+            <field eval="'mergepurge.group'" name="model"/>
+            <field name="name">Execute Group Merge Menu Item</field>
+            <field eval="'ir.actions.server,%d'%action_execute_merge_group" name="value"/>
+        </record>
+	</data>
+</openerp>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+     <data>
+        <record id="mergepurge_group_wiz_view" model="ir.ui.view">
+             <field name="name">mergepurge.group.wizard.form</field>
+             <field name="model">mergepurge.group.wizard</field>
+             <field name="arch" type="xml">
+				<form string="Customer Merge and Purge" version="7.0">
+                    <button special="cancel" string="Cancel" icon="gtk-cancel"/>
+                    <button name="generate_all" string="Generate All Groups"
+                            type="object" icon="gtk-ok" default_focus="1"/>
+                    <button name="generate_all" string="Execute Merge and Purge on All Groups"
+                            type="object" icon="gtk-ok" default_focus="1"/>
+				</form>
+			</field>
+		</record>
+
+        <record id="action_mergepurge_group_wiz" model="ir.actions.act_window">
+            <field name="name">Merge Group Wizard</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">mergepurge.group.wizard</field>
+			<field name="view_id" ref="mergepurge_group_wiz_view"/>
+            <field name="target">new</field>
+        </record>
+
+        <menuitem action="action_mergepurge_group_wiz" id="menu_mergepurge_group_wiz" parent="base.menu_sales" sequence="5"/>
+	</data>
+</openerp>
